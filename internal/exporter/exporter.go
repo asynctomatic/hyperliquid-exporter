@@ -33,6 +33,7 @@ func Start(ctx context.Context, cfg config.Config) {
 	replicaErrCh := make(chan error, 1)
 	latencyErrCh := make(chan error, 1)
 	gossipErrCh := make(chan error, 1)
+	hip3OracleErrCh := make(chan error, 1)
 
 	logger.InfoComponent("core", "Initializing block monitor...")
 	go monitors.StartBlockMonitor(monitorCtx, cfg, blockErrCh)
@@ -95,6 +96,11 @@ func Start(ctx context.Context, cfg config.Config) {
 		}()
 	}
 
+	if cfg.EnableHIP3Oracle {
+		logger.InfoComponent("oracle", "Initializing HIP3 oracle updates monitor...")
+		go monitors.StartHIP3OracleUpdatesMonitor(monitorCtx, cfg, hip3OracleErrCh)
+	}
+
 	logger.InfoComponent("system", "Exporter is now running")
 
 	// start memory monitoring
@@ -137,6 +143,8 @@ func Start(ctx context.Context, cfg config.Config) {
 			logger.ErrorComponent("latency", "Validator latency monitor error: %v", err)
 		case err := <-gossipErrCh:
 			logger.ErrorComponent("gossip", "Gossip monitor error: %v", err)
+		case err := <-hip3OracleErrCh:
+			logger.ErrorComponent("oracle", "HIP3 oracle monitor error: %v", err)
 		case <-ctx.Done():
 			logger.InfoComponent("system", "Shutting down monitors...")
 			return

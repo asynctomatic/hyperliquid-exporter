@@ -33,6 +33,7 @@ func main() {
 		fmt.Println("  --chain            Chain type (required when OTLP is enabled: 'mainnet' or 'testnet')")
 		fmt.Println("  --otlp-insecure    Use insecure connection for OTLP (default: false)")
 		fmt.Println("  --evm              Enable EVM monitoring (default: false)")
+		fmt.Println("  --hip3-oracle      Enable HIP3 oracle monitoring (default: false)")
 		fmt.Println("  --enable-contract-metrics Enable per-contract transaction metrics (default: false)")
 		fmt.Println("  --contract-metrics-limit Maximum number of individual contract labels to retain")
 		fmt.Println("  --evm-block-type-metrics Enable block type labels (standard/high) for EVM metrics (default: false)")
@@ -57,6 +58,7 @@ func main() {
 	contractLimit := startCmd.Int("contract-metrics-limit", 20, "Maximum number of individual contract labels to retain")
 	enableReplicaMetrics := startCmd.Bool("replica-metrics", false, "Enable replica commands transaction metrics")
 	enableValidatorRTT := startCmd.Bool("validator-rtt", false, "Enable validator RTT monitoring")
+	enableHIP3Oracle := startCmd.Bool("hip3-oracle", false, "Enable HIP3 oracle monitoring")
 
 	switch os.Args[1] {
 	case "start":
@@ -85,6 +87,7 @@ func main() {
 		NodeBinary:            *nodeBinary,
 		Chain:                 *chain,
 		EnableEVM:             *enableEVM,
+		EnableHIP3Oracle:      *enableHIP3Oracle,
 		EnableContractMetrics: *contractMetrics,
 		ContractMetricsLimit:  *contractLimit,
 		EnableCoreTxMetrics:   false,
@@ -137,6 +140,7 @@ func main() {
 		ValidatorAddress: validatorAddress,
 		IsValidator:      isValidator,
 		EnableEVM:        *enableEVM,
+		EnableHIP3Oracle: *enableHIP3Oracle,
 	}
 
 	if err := metrics.InitMetrics(ctx, metricsConfig); err != nil {

@@ -11,4 +11,5 @@ type MetricsConfig struct {
 	ValidatorAddress string
 	IsValidator      bool
 	EnableEVM        bool
+	EnableHIP3Oracle bool
 }

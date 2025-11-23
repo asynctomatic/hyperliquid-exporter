@@ -85,6 +85,11 @@ func getAllObservables() []api.Observable {
 
 		// monitor health metrics
 		HLConsensusMonitorLastProcessedGauge,
+
+		// HIP3 Oracle metrics
+		HLHIP3OracleLatestValueGauge,
+		HLHIP3OracleLatestUpdateTimeGauge,
+		HLHIP3OracleLatestHeightGauge,
 	}
 }
 

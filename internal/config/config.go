@@ -15,6 +15,7 @@ type Config struct {
 	NodeBinary             string
 	Chain                  string
 	EnableEVM              bool
+	EnableHIP3Oracle       bool
 	EnableContractMetrics  bool
 	ContractMetricsLimit   int
 	EVMBlockTypeMetrics    bool
@@ -35,6 +36,7 @@ type Flags struct {
 	NodeBinary            string
 	Chain                 string
 	EnableEVM             bool
+	EnableHIP3Oracle      bool
 	EnableContractMetrics bool
 	ContractMetricsLimit  int
 	EVMBlockTypeMetrics   bool
@@ -84,6 +86,7 @@ func LoadConfig(flags *Flags) Config {
 		NodeBinary:             nodeBinary,
 		Chain:                  flags.Chain,
 		EnableEVM:              flags.EnableEVM,
+		EnableHIP3Oracle:       flags.EnableHIP3Oracle,
 		EnableContractMetrics:  flags.EnableContractMetrics,
 		ContractMetricsLimit:   flags.ContractMetricsLimit,
 		EVMBlockTypeMetrics:    flags.EVMBlockTypeMetrics,

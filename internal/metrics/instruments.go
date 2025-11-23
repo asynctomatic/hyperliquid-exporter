@@ -117,6 +117,14 @@ var (
 	HLConsensusMonitorLastProcessedGauge api.Int64ObservableGauge
 	HLConsensusMonitorLinesCounter       api.Int64Counter
 	HLConsensusMonitorErrorsCounter      api.Int64Counter
+
+	// HIP3 Oracle metrics
+	HLHIP3OracleUpdatesTotalCounter      api.Int64Counter
+	HLHIP3OracleUpdatesByDeployerCounter api.Int64Counter
+	HLHIP3OracleUpdatesByTypeCounter     api.Int64Counter
+	HLHIP3OracleLatestValueGauge         api.Float64ObservableGauge
+	HLHIP3OracleLatestUpdateTimeGauge    api.Int64ObservableGauge
+	HLHIP3OracleLatestHeightGauge        api.Int64ObservableGauge
 )
 
 func createInstruments() error {
@@ -822,6 +830,55 @@ func createInstruments() error {
 	)
 	if err != nil {
 		return fmt.Errorf("failed to create P2P non-validator peers total gauge: %w", err)
+	}
+
+	// HIP3 Oracle metrics
+	HLHIP3OracleUpdatesTotalCounter, err = meter.Int64Counter(
+		"hl_hip3_oracle_updates_total",
+		api.WithDescription("Total number of HIP3 oracle updates"),
+	)
+	if err != nil {
+		return fmt.Errorf("failed to create HIP3 oracle updates total counter: %w", err)
+	}
+
+	HLHIP3OracleUpdatesByDeployerCounter, err = meter.Int64Counter(
+		"hl_hip3_oracle_updates_by_deployer_total",
+		api.WithDescription("Total number of HIP3 oracle updates by deployer"),
+	)
+	if err != nil {
+		return fmt.Errorf("failed to create HIP3 oracle updates by deployer counter: %w", err)
+	}
+
+	HLHIP3OracleUpdatesByTypeCounter, err = meter.Int64Counter(
+		"hl_hip3_oracle_updates_by_type_total",
+		api.WithDescription("Total number of HIP3 oracle updates by type"),
+	)
+	if err != nil {
+		return fmt.Errorf("failed to create HIP3 oracle updates by type counter: %w", err)
+	}
+
+	HLHIP3OracleLatestValueGauge, err = meter.Float64ObservableGauge(
+		"hl_hip3_oracle_latest_value",
+		api.WithDescription("Latest value reported by HIP3 oracle"),
+	)
+	if err != nil {
+		return fmt.Errorf("failed to create HIP3 oracle latest value gauge: %w", err)
+	}
+
+	HLHIP3OracleLatestUpdateTimeGauge, err = meter.Int64ObservableGauge(
+		"hl_hip3_oracle_latest_update_time",
+		api.WithDescription("Unix timestamp of latest HIP3 oracle update"),
+	)
+	if err != nil {
+		return fmt.Errorf("failed to create HIP3 oracle latest update time gauge: %w", err)
+	}
+
+	HLHIP3OracleLatestHeightGauge, err = meter.Int64ObservableGauge(
+		"hl_hip3_oracle_latest_height",
+		api.WithDescription("Block height of latest HIP3 oracle update"),
+	)
+	if err != nil {
+		return fmt.Errorf("failed to create HIP3 oracle latest height gauge: %w", err)
 	}
 
 	return nil

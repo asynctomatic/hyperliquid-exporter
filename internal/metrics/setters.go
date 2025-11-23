@@ -1162,3 +1162,58 @@ func SetP2PNonValPeersTotal(total int64) {
 		labels: []attribute.KeyValue{},
 	}
 }
+
+// HIP3 Oracle metric setters
+
+func IncrementHIP3OracleUpdatesTotal() {
+	ctx := context.Background()
+	if HLHIP3OracleUpdatesTotalCounter != nil {
+		HLHIP3OracleUpdatesTotalCounter.Add(ctx, 1)
+	}
+}
+
+func IncrementHIP3OracleUpdatesByDeployer(deployer string) {
+	ctx := context.Background()
+	if HLHIP3OracleUpdatesByDeployerCounter != nil {
+		HLHIP3OracleUpdatesByDeployerCounter.Add(ctx, 1,
+			api.WithAttributes(attribute.String("deployer", deployer)))
+	}
+}
+
+func IncrementHIP3OracleUpdatesByType(updateType string) {
+	ctx := context.Background()
+	if HLHIP3OracleUpdatesByTypeCounter != nil {
+		HLHIP3OracleUpdatesByTypeCounter.Add(ctx, 1,
+			api.WithAttributes(attribute.String("type", updateType)))
+	}
+}
+
+func SetHIP3OracleLatestValue(oracleID string, value float64) {
+	labels := []attribute.KeyValue{
+		attribute.String("oracle_id", oracleID),
+	}
+
+	metricsMutex.Lock()
+	defer metricsMutex.Unlock()
+
+	if _, exists := labeledValues[HLHIP3OracleLatestValueGauge]; !exists {
+		labeledValues[HLHIP3OracleLatestValueGauge] = make(map[string]labeledValue)
+	}
+
+	labeledValues[HLHIP3OracleLatestValueGauge][oracleID] = labeledValue{
+		value:  value,
+		labels: labels,
+	}
+}
+
+func SetHIP3OracleLatestUpdateTime(timestamp int64) {
+	metricsMutex.Lock()
+	defer metricsMutex.Unlock()
+	currentValues[HLHIP3OracleLatestUpdateTimeGauge] = timestamp
+}
+
+func SetHIP3OracleLatestHeight(height int64) {
+	metricsMutex.Lock()
+	defer metricsMutex.Unlock()
+	currentValues[HLHIP3OracleLatestHeightGauge] = height
+}
