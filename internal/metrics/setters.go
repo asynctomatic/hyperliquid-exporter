@@ -2,6 +2,7 @@ package metrics
 
 import (
 	"context"
+	"fmt"
 	"strings"
 	"sync"
 	"time"
@@ -1216,4 +1217,52 @@ func SetHIP3OracleLatestHeight(height int64) {
 	metricsMutex.Lock()
 	defer metricsMutex.Unlock()
 	currentValues[HLHIP3OracleLatestHeightGauge] = height
+}
+
+func IncrementHIP3OracleUpdatesByClassAndDeployer(updateClass string, deployer string) {
+	ctx := context.Background()
+	if HLHIP3OracleUpdatesByClassAndDeployerCounter != nil {
+		HLHIP3OracleUpdatesByClassAndDeployerCounter.Add(ctx, 1,
+			api.WithAttributes(
+				attribute.String("update_class", updateClass),
+				attribute.String("deployer", deployer)))
+	}
+}
+
+func SetHIP3OracleMarketsPerDeployer(deployer string, count int64) {
+	labels := []attribute.KeyValue{
+		attribute.String("deployer", deployer),
+	}
+
+	metricsMutex.Lock()
+	defer metricsMutex.Unlock()
+
+	if _, exists := labeledValues[HLHIP3OracleMarketsPerDeployerGauge]; !exists {
+		labeledValues[HLHIP3OracleMarketsPerDeployerGauge] = make(map[string]labeledValue)
+	}
+
+	labeledValues[HLHIP3OracleMarketsPerDeployerGauge][deployer] = labeledValue{
+		value:  float64(count),
+		labels: labels,
+	}
+}
+
+func SetHIP3OracleMarketLastUpdateTime(deployer string, market string, timestamp int64) {
+	key := fmt.Sprintf("%s:%s", deployer, market)
+	labels := []attribute.KeyValue{
+		attribute.String("deployer", deployer),
+		attribute.String("market", market),
+	}
+
+	metricsMutex.Lock()
+	defer metricsMutex.Unlock()
+
+	if _, exists := labeledValues[HLHIP3OracleMarketLastUpdateTimeGauge]; !exists {
+		labeledValues[HLHIP3OracleMarketLastUpdateTimeGauge] = make(map[string]labeledValue)
+	}
+
+	labeledValues[HLHIP3OracleMarketLastUpdateTimeGauge][key] = labeledValue{
+		value:  float64(timestamp),
+		labels: labels,
+	}
 }

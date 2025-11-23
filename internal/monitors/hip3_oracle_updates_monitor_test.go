@@ -126,6 +126,45 @@ func TestExtractDeployerFromCoin(t *testing.T) {
 	}
 }
 
+// TestExtractMarketFromCoin tests the market extraction function
+func TestExtractMarketFromCoin(t *testing.T) {
+	tests := []struct {
+		name     string
+		coin     string
+		expected string
+	}{
+		{
+			name:     "flx market",
+			coin:     "flx:NVDA",
+			expected: "NVDA",
+		},
+		{
+			name:     "vntl market",
+			coin:     "vntl:SPACEX",
+			expected: "SPACEX",
+		},
+		{
+			name:     "xyz market",
+			coin:     "xyz:AAPL",
+			expected: "AAPL",
+		},
+		{
+			name:     "no deployer prefix",
+			coin:     "TSLA",
+			expected: "TSLA",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result := extractMarketFromCoin(tt.coin)
+			if result != tt.expected {
+				t.Errorf("extractMarketFromCoin() = %v, want %v", result, tt.expected)
+			}
+		})
+	}
+}
+
 // TestParseFloat tests the float parsing function
 func TestParseFloat(t *testing.T) {
 	tests := []struct {

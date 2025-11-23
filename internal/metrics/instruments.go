@@ -119,12 +119,15 @@ var (
 	HLConsensusMonitorErrorsCounter      api.Int64Counter
 
 	// HIP3 Oracle metrics
-	HLHIP3OracleUpdatesTotalCounter      api.Int64Counter
-	HLHIP3OracleUpdatesByDeployerCounter api.Int64Counter
-	HLHIP3OracleUpdatesByTypeCounter     api.Int64Counter
-	HLHIP3OracleLatestValueGauge         api.Float64ObservableGauge
-	HLHIP3OracleLatestUpdateTimeGauge    api.Int64ObservableGauge
-	HLHIP3OracleLatestHeightGauge        api.Int64ObservableGauge
+	HLHIP3OracleUpdatesTotalCounter           api.Int64Counter
+	HLHIP3OracleUpdatesByDeployerCounter      api.Int64Counter
+	HLHIP3OracleUpdatesByTypeCounter          api.Int64Counter
+	HLHIP3OracleUpdatesByClassAndDeployerCounter api.Int64Counter
+	HLHIP3OracleLatestValueGauge              api.Float64ObservableGauge
+	HLHIP3OracleLatestUpdateTimeGauge         api.Int64ObservableGauge
+	HLHIP3OracleLatestHeightGauge             api.Int64ObservableGauge
+	HLHIP3OracleMarketsPerDeployerGauge       api.Int64ObservableGauge
+	HLHIP3OracleMarketLastUpdateTimeGauge     api.Int64ObservableGauge
 )
 
 func createInstruments() error {
@@ -879,6 +882,30 @@ func createInstruments() error {
 	)
 	if err != nil {
 		return fmt.Errorf("failed to create HIP3 oracle latest height gauge: %w", err)
+	}
+
+	HLHIP3OracleUpdatesByClassAndDeployerCounter, err = meter.Int64Counter(
+		"hl_hip3_oracle_updates_by_class_and_deployer_total",
+		api.WithDescription("Total number of HIP3 oracle updates by update class and deployer"),
+	)
+	if err != nil {
+		return fmt.Errorf("failed to create HIP3 oracle updates by class and deployer counter: %w", err)
+	}
+
+	HLHIP3OracleMarketsPerDeployerGauge, err = meter.Int64ObservableGauge(
+		"hl_hip3_oracle_markets_per_deployer",
+		api.WithDescription("Number of markets updated per deployer in latest update"),
+	)
+	if err != nil {
+		return fmt.Errorf("failed to create HIP3 oracle markets per deployer gauge: %w", err)
+	}
+
+	HLHIP3OracleMarketLastUpdateTimeGauge, err = meter.Int64ObservableGauge(
+		"hl_hip3_oracle_market_last_update_time",
+		api.WithDescription("Unix timestamp of last update for each deployer market"),
+	)
+	if err != nil {
+		return fmt.Errorf("failed to create HIP3 oracle market last update time gauge: %w", err)
 	}
 
 	return nil

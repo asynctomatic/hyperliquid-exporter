@@ -90,6 +90,8 @@ func getAllObservables() []api.Observable {
 		HLHIP3OracleLatestValueGauge,
 		HLHIP3OracleLatestUpdateTimeGauge,
 		HLHIP3OracleLatestHeightGauge,
+		HLHIP3OracleMarketsPerDeployerGauge,
+		HLHIP3OracleMarketLastUpdateTimeGauge,
 	}
 }
 

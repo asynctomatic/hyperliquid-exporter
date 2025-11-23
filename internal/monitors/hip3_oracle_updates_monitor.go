@@ -183,25 +183,41 @@ func parseOracleUpdateLine(ctx context.Context, line string) error {
 	deployer := extractDeployerFromUpdate(&update)
 	if deployer != "" {
 		metrics.IncrementHIP3OracleUpdatesByDeployer(deployer)
+
+		// track updates by update_class and deployer
+		if update.UpdateClass != "" {
+			metrics.IncrementHIP3OracleUpdatesByClassAndDeployer(update.UpdateClass, deployer)
+		}
 	}
 
+	// track unique markets for this update
+	uniqueMarkets := make(map[string]bool)
+
 	// process mark prices
-	if err := processPriceData(update.OraclePxs.CoinToMarkPx, "mark_px"); err != nil {
-		logger.DebugComponent("oracle", "Error processing mark prices: %v", err)
+	markets := processPriceData(update.OraclePxs.CoinToMarkPx, "mark_px", deployer)
+	for market := range markets {
+		uniqueMarkets[market] = true
 	}
 
 	// process oracle prices
-	if err := processPriceData(update.OraclePxs.CoinToOraclePx, "oracle_px"); err != nil {
-		logger.DebugComponent("oracle", "Error processing oracle prices: %v", err)
+	markets = processPriceData(update.OraclePxs.CoinToOraclePx, "oracle_px", deployer)
+	for market := range markets {
+		uniqueMarkets[market] = true
 	}
 
 	// process external perp prices
-	if err := processPriceData(update.OraclePxs.CoinToExternalPerpPx, "external_perp_px"); err != nil {
-		logger.DebugComponent("oracle", "Error processing external perp prices: %v", err)
+	markets = processPriceData(update.OraclePxs.CoinToExternalPerpPx, "external_perp_px", deployer)
+	for market := range markets {
+		uniqueMarkets[market] = true
 	}
 
-	logger.DebugComponent("oracle", "Processed HIP3 oracle update: deployer=%s, update_class=%s",
-		deployer, update.UpdateClass)
+	// set markets per deployer count
+	if deployer != "" {
+		metrics.SetHIP3OracleMarketsPerDeployer(deployer, int64(len(uniqueMarkets)))
+	}
+
+	logger.DebugComponent("oracle", "Processed HIP3 oracle update: deployer=%s, update_class=%s, markets=%d",
+		deployer, update.UpdateClass, len(uniqueMarkets))
 
 	return nil
 }
@@ -239,8 +255,11 @@ func extractDeployerFromCoin(coin string) string {
 }
 
 // processPriceData processes a price data array and updates metrics
-func processPriceData(priceData [][]interface{}, priceType string) error {
+// Returns a map of unique markets (coin names without deployer prefix)
+func processPriceData(priceData [][]interface{}, priceType string, deployer string) map[string]bool {
 	metrics.IncrementHIP3OracleUpdatesByType(priceType)
+
+	markets := make(map[string]bool)
 
 	for _, entry := range priceData {
 		if len(entry) < 2 {
@@ -273,16 +292,36 @@ func processPriceData(priceData [][]interface{}, priceType string) error {
 		metricKey := fmt.Sprintf("%s:%s", coin, priceType)
 		metrics.SetHIP3OracleLatestValue(metricKey, px)
 
+		// extract market name (coin without deployer prefix)
+		market := extractMarketFromCoin(coin)
+		if market != "" {
+			markets[market] = true
+		}
+
 		// track latest update timestamp
 		if lastUpdateTimeStr, ok := priceInfoMap["last_update_time"].(string); ok {
 			parsedTime, err := parseOracleTimestamp(lastUpdateTimeStr)
 			if err == nil {
 				metrics.SetHIP3OracleLatestUpdateTime(parsedTime.Unix())
+
+				// track last update time per deployer and market
+				if deployer != "" && market != "" {
+					metrics.SetHIP3OracleMarketLastUpdateTime(deployer, market, parsedTime.Unix())
+				}
 			}
 		}
 	}
 
-	return nil
+	return markets
+}
+
+// extractMarketFromCoin extracts market name from coin string (e.g., "flx:NVDA" -> "NVDA")
+func extractMarketFromCoin(coin string) string {
+	parts := strings.Split(coin, ":")
+	if len(parts) >= 2 {
+		return parts[1]
+	}
+	return coin
 }
 
 // parseFloat parses a string to float64
