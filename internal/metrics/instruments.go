@@ -152,6 +152,7 @@ var (
 	HLPerpMarketLiquidityAsk10bps  api.Float64ObservableGauge
 	HLPerpMarketLiquidityAsk50bps  api.Float64ObservableGauge
 	HLPerpMarketLiquidityAsk100bps api.Float64ObservableGauge
+	HLPerpMarketLeverageDistribution api.Float64ObservableGauge
 )
 
 func createInstruments() error {
@@ -1092,6 +1093,14 @@ func createInstruments() error {
 	)
 	if err != nil {
 		return fmt.Errorf("failed to create perp market liquidity ask 100bps gauge: %w", err)
+	}
+
+	HLPerpMarketLeverageDistribution, err = meter.Float64ObservableGauge(
+		"hl_perp_market_leverage_distribution",
+		api.WithDescription("Distribution of user leverage selections by bucket for each perpetual market"),
+	)
+	if err != nil {
+		return fmt.Errorf("failed to create perp market leverage distribution gauge: %w", err)
 	}
 
 	return nil

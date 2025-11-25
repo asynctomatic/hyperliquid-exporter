@@ -1632,3 +1632,23 @@ func SetPerpMarketLiquidityAsk100bps(symbol string, liquidity float64) {
 		labels: labels,
 	}
 }
+
+func SetPerpMarketLeverageDistribution(symbol string, bucket string, count float64) {
+	key := fmt.Sprintf("%s:%s", symbol, bucket)
+	labels := []attribute.KeyValue{
+		attribute.String("symbol", symbol),
+		attribute.String("bucket", bucket),
+	}
+
+	metricsMutex.Lock()
+	defer metricsMutex.Unlock()
+
+	if _, exists := labeledValues[HLPerpMarketLeverageDistribution]; !exists {
+		labeledValues[HLPerpMarketLeverageDistribution] = make(map[string]labeledValue)
+	}
+
+	labeledValues[HLPerpMarketLeverageDistribution][key] = labeledValue{
+		value:  count,
+		labels: labels,
+	}
+}

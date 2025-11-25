@@ -395,3 +395,138 @@ func (r *Reader) ReadValidatorProfiles(filePath string) ([]ValidatorProfile, err
 
 	return profiles, nil
 }
+
+// reads perp user leverage data from ABCI state
+func (r *Reader) ReadPerpLeverageData(filePath string) (map[int64][]int64, error) {
+	file, err := os.Open(filePath)
+	if err != nil {
+		return nil, fmt.Errorf("open file: %w", err)
+	}
+	defer file.Close()
+
+	reader := bufio.NewReaderSize(file, r.bufferSize)
+
+	// Structure for clearinghouse user states
+	var data struct {
+		Exchange struct {
+			PerpDexs []struct {
+				Clearinghouse struct {
+					UserStates struct {
+						UserToState [][]interface{} `msgpack:"user_to_state"`
+					} `msgpack:"user_states"`
+				} `msgpack:"clearinghouse"`
+			} `msgpack:"perp_dexs"`
+		} `msgpack:"exchange"`
+	}
+
+	decoder := msgpack.NewDecoder(reader)
+	decoder.SetCustomStructTag("msgpack")
+
+	if err := decoder.Decode(&data); err != nil {
+		return nil, fmt.Errorf("decode: %w", err)
+	}
+
+	// Map of market ID -> list of leverage values
+	marketLeverages := make(map[int64][]int64)
+
+	// Iterate through perp dexes (index is dex ID)
+	for dexID, perpDex := range data.Exchange.PerpDexs {
+		fmt.Printf("dex ID: %d\n", dexID)
+
+		// Parse user states for this dex
+		for _, entry := range perpDex.Clearinghouse.UserStates.UserToState {
+			if len(entry) != 2 {
+				continue
+			}
+
+			// 2nd element is the state object
+			stateMap, ok := entry[1].(map[string]interface{})
+			if !ok || len(stateMap) == 0 {
+				continue
+			}
+
+			// Navigate to positions: state.p.p
+			pMap, ok := stateMap["p"].(map[string]interface{})
+			if !ok {
+				continue
+			}
+
+			positions, ok := pMap["p"].([]interface{})
+			if !ok {
+				continue
+			}
+
+			// Parse positions
+			for _, posRaw := range positions {
+				position, ok := posRaw.([]interface{})
+				if !ok || len(position) != 2 {
+					continue
+				}
+
+				// 1st element is market ID
+				var marketID int64
+				switch val := position[0].(type) {
+				case uint16:
+					marketID = int64(val)
+				case int16:
+					marketID = int64(val)
+				case uint32:
+					marketID = int64(val)
+				case int32:
+					marketID = int64(val)
+				case int64:
+					marketID = val
+				default:
+					continue
+				}
+
+				// 2nd element is position data
+				posData, ok := position[1].(map[string]interface{})
+				if !ok {
+					continue
+				}
+
+				// Navigate to leverage: posData.l.I.l
+				lMap, ok := posData["l"].(map[string]interface{})
+				if !ok {
+					continue
+				}
+
+				iMap, ok := lMap["I"].(map[string]interface{})
+				if !ok {
+					continue
+				}
+
+				// Extract leverage value
+				var leverage int64
+				switch val := iMap["l"].(type) {
+				case uint8:
+					leverage = int64(val)
+				case int8:
+					leverage = int64(val)
+				case uint16:
+					leverage = int64(val)
+				case int16:
+					leverage = int64(val)
+				case uint32:
+					leverage = int64(val)
+				case int32:
+					leverage = int64(val)
+				case int64:
+					leverage = val
+				default:
+					continue
+				}
+
+				// Skip if leverage is 0 or negative
+				if leverage <= 0 {
+					continue
+				}
+
+				marketLeverages[marketID] = append(marketLeverages[marketID], leverage)
+			}
+		}
+	}
+
+	return marketLeverages, nil
+}
