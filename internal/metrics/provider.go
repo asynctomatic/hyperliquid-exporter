@@ -97,6 +97,17 @@ func getAllObservables() []api.Observable {
 		HLSpotAssetTotalSupplyGauge,
 		HLSpotAssetHoldersCountGauge,
 		HLSpotAssetSupplyDistributionGauge,
+
+		// Perpetual Markets metrics
+		HLPerpMarketMarkPrice,
+		HLPerpMarketFundingRate,
+		HLPerpMarketOpenInterest,
+		HLPerpMarket24hVolume,
+		HLPerpMarketPremium,
+		HLPerpMarketOraclePrice,
+		HLPerpMarketMidPrice,
+		HLPerpMarketImpactBid,
+		HLPerpMarketImpactAsk,
 	}
 }
 

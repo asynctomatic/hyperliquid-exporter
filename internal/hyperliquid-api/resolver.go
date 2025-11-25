@@ -140,6 +140,44 @@ func (r *Resolver) GetSignerToValidatorMapping() map[string]string {
 	return mapping
 }
 
+// fetches market data (metaAndAssetCtxs) from the info API
+func (r *Resolver) GetMarketData(ctx context.Context) (*MarketData, error) {
+	req := APIRequest{Type: "metaAndAssetCtxs"}
+
+	var response []json.RawMessage
+	if err := r.makeAPICall(ctx, "/info", req, &response); err != nil {
+		return nil, fmt.Errorf("failed to fetch market data: %w", err)
+	}
+
+	if len(response) != 2 {
+		return nil, fmt.Errorf("unexpected response format: expected 2 elements, got %d", len(response))
+	}
+
+	// first element is object containing universe array
+	var meta struct {
+		Universe []AssetInfo `json:"universe"`
+	}
+	if err := json.Unmarshal(response[0], &meta); err != nil {
+		return nil, fmt.Errorf("failed to unmarshal meta: %w", err)
+	}
+
+	// second element is contexts array
+	var contexts []AssetContext
+	if err := json.Unmarshal(response[1], &contexts); err != nil {
+		return nil, fmt.Errorf("failed to unmarshal contexts: %w", err)
+	}
+
+	// validate lengths match
+	if len(meta.Universe) != len(contexts) {
+		return nil, fmt.Errorf("universe and contexts length mismatch: %d vs %d", len(meta.Universe), len(contexts))
+	}
+
+	return &MarketData{
+		Universe: meta.Universe,
+		Contexts: contexts,
+	}, nil
+}
+
 // makes actual API call
 func (r *Resolver) fetchValidatorSummaries(ctx context.Context) ([]ValidatorSummary, error) {
 	req := APIRequest{Type: "validatorSummaries"}

@@ -42,6 +42,7 @@ func main() {
 		fmt.Println("  --replica-buffer-size Buffer size in MB for parsing replica files (default: 8)")
 		fmt.Println("  --enable-validator-rtt Enable validator RTT monitoring (true/false/auto, default: auto)")
 		fmt.Println("  --spot-assets Comma-separated list of spot asset symbols to monitor (e.g., USDC,PURR,HYPE)")
+		fmt.Println("  --perp-markets Comma-separated list of perpetual market symbols to monitor (e.g., BTC,ETH,SOL)")
 		os.Exit(1)
 	}
 
@@ -61,6 +62,7 @@ func main() {
 	enableValidatorRTT := startCmd.Bool("validator-rtt", false, "Enable validator RTT monitoring")
 	enableHIP3Oracle := startCmd.Bool("hip3-oracle", false, "Enable HIP3 oracle monitoring")
 	spotAssets := startCmd.String("spot-assets", "", "Comma-separated list of spot asset symbols to monitor (e.g., USDC,PURR,HYPE)")
+	perpMarkets := startCmd.String("perp-markets", "", "Comma-separated list of perpetual market symbols to monitor (e.g., BTC,ETH,SOL)")
 
 	switch os.Args[1] {
 	case "start":
@@ -100,6 +102,7 @@ func main() {
 		EVMBlockTypeMetrics:   *enableEVM, // Always enable block type metrics when EVM is enabled
 		EnableValidatorRTT:    enableValidatorRTT, // Use the bool pointer directly
 		SpotAssetSymbols:      *spotAssets,
+		PerpMarketSymbols:     *perpMarkets,
 	}
 
 	cfg := config.LoadConfig(flags)

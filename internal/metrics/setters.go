@@ -1324,3 +1324,167 @@ func SetSpotAssetSupplyDistribution(symbol string, bucket string, count float64)
 		labels: labels,
 	}
 }
+
+// Perpetual Markets metrics setters
+
+func SetPerpMarketMarkPrice(symbol string, price float64) {
+	labels := []attribute.KeyValue{
+		attribute.String("symbol", symbol),
+	}
+
+	metricsMutex.Lock()
+	defer metricsMutex.Unlock()
+
+	if _, exists := labeledValues[HLPerpMarketMarkPrice]; !exists {
+		labeledValues[HLPerpMarketMarkPrice] = make(map[string]labeledValue)
+	}
+
+	labeledValues[HLPerpMarketMarkPrice][symbol] = labeledValue{
+		value:  price,
+		labels: labels,
+	}
+}
+
+func SetPerpMarketFundingRate(symbol string, rate float64) {
+	labels := []attribute.KeyValue{
+		attribute.String("symbol", symbol),
+	}
+
+	metricsMutex.Lock()
+	defer metricsMutex.Unlock()
+
+	if _, exists := labeledValues[HLPerpMarketFundingRate]; !exists {
+		labeledValues[HLPerpMarketFundingRate] = make(map[string]labeledValue)
+	}
+
+	labeledValues[HLPerpMarketFundingRate][symbol] = labeledValue{
+		value:  rate,
+		labels: labels,
+	}
+}
+
+func SetPerpMarketOpenInterest(symbol string, oi float64) {
+	labels := []attribute.KeyValue{
+		attribute.String("symbol", symbol),
+	}
+
+	metricsMutex.Lock()
+	defer metricsMutex.Unlock()
+
+	if _, exists := labeledValues[HLPerpMarketOpenInterest]; !exists {
+		labeledValues[HLPerpMarketOpenInterest] = make(map[string]labeledValue)
+	}
+
+	labeledValues[HLPerpMarketOpenInterest][symbol] = labeledValue{
+		value:  oi,
+		labels: labels,
+	}
+}
+
+func SetPerpMarket24hVolume(symbol string, volume float64) {
+	labels := []attribute.KeyValue{
+		attribute.String("symbol", symbol),
+	}
+
+	metricsMutex.Lock()
+	defer metricsMutex.Unlock()
+
+	if _, exists := labeledValues[HLPerpMarket24hVolume]; !exists {
+		labeledValues[HLPerpMarket24hVolume] = make(map[string]labeledValue)
+	}
+
+	labeledValues[HLPerpMarket24hVolume][symbol] = labeledValue{
+		value:  volume,
+		labels: labels,
+	}
+}
+
+func SetPerpMarketPremium(symbol string, premium float64) {
+	labels := []attribute.KeyValue{
+		attribute.String("symbol", symbol),
+	}
+
+	metricsMutex.Lock()
+	defer metricsMutex.Unlock()
+
+	if _, exists := labeledValues[HLPerpMarketPremium]; !exists {
+		labeledValues[HLPerpMarketPremium] = make(map[string]labeledValue)
+	}
+
+	labeledValues[HLPerpMarketPremium][symbol] = labeledValue{
+		value:  premium,
+		labels: labels,
+	}
+}
+
+func SetPerpMarketOraclePrice(symbol string, price float64) {
+	labels := []attribute.KeyValue{
+		attribute.String("symbol", symbol),
+	}
+
+	metricsMutex.Lock()
+	defer metricsMutex.Unlock()
+
+	if _, exists := labeledValues[HLPerpMarketOraclePrice]; !exists {
+		labeledValues[HLPerpMarketOraclePrice] = make(map[string]labeledValue)
+	}
+
+	labeledValues[HLPerpMarketOraclePrice][symbol] = labeledValue{
+		value:  price,
+		labels: labels,
+	}
+}
+
+func SetPerpMarketMidPrice(symbol string, price float64) {
+	labels := []attribute.KeyValue{
+		attribute.String("symbol", symbol),
+	}
+
+	metricsMutex.Lock()
+	defer metricsMutex.Unlock()
+
+	if _, exists := labeledValues[HLPerpMarketMidPrice]; !exists {
+		labeledValues[HLPerpMarketMidPrice] = make(map[string]labeledValue)
+	}
+
+	labeledValues[HLPerpMarketMidPrice][symbol] = labeledValue{
+		value:  price,
+		labels: labels,
+	}
+}
+
+func SetPerpMarketImpactBid(symbol string, price float64) {
+	labels := []attribute.KeyValue{
+		attribute.String("symbol", symbol),
+	}
+
+	metricsMutex.Lock()
+	defer metricsMutex.Unlock()
+
+	if _, exists := labeledValues[HLPerpMarketImpactBid]; !exists {
+		labeledValues[HLPerpMarketImpactBid] = make(map[string]labeledValue)
+	}
+
+	labeledValues[HLPerpMarketImpactBid][symbol] = labeledValue{
+		value:  price,
+		labels: labels,
+	}
+}
+
+func SetPerpMarketImpactAsk(symbol string, price float64) {
+	labels := []attribute.KeyValue{
+		attribute.String("symbol", symbol),
+	}
+
+	metricsMutex.Lock()
+	defer metricsMutex.Unlock()
+
+	if _, exists := labeledValues[HLPerpMarketImpactAsk]; !exists {
+		labeledValues[HLPerpMarketImpactAsk] = make(map[string]labeledValue)
+	}
+
+	labeledValues[HLPerpMarketImpactAsk][symbol] = labeledValue{
+		value:  price,
+		labels: labels,
+	}
+}

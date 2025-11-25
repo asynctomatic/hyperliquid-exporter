@@ -28,6 +28,8 @@ type Config struct {
 	ReplicaBufferSize      int
 	EnableValidatorRTT     bool
 	SpotAssetSymbols       []string // List of spot asset symbols to monitor
+	PerpMarketSymbols      []string // List of perpetual market symbols to monitor
+	NodeInfoEndpoint       string   // API endpoint for market data
 	MetricsAddr            string
 	LogLevel               string
 	LogFormat              string
@@ -49,6 +51,7 @@ type Flags struct {
 	ReplicaBufferSize     int
 	EnableValidatorRTT    *bool // to distinguish between not set and false
 	SpotAssetSymbols      string // Comma-separated list of spot asset symbols to monitor
+	PerpMarketSymbols     string // Comma-separated list of perpetual market symbols to monitor
 	MetricsAddr           string
 	LogLevel              string
 	LogFormat             string
@@ -96,6 +99,24 @@ func LoadConfig(flags *Flags) Config {
 		}
 	}
 
+	// parse perpetual market symbols from comma-separated string
+	var perpMarketSymbols []string
+	if flags.PerpMarketSymbols != "" {
+		symbols := strings.Split(flags.PerpMarketSymbols, ",")
+		for _, symbol := range symbols {
+			trimmed := strings.TrimSpace(symbol)
+			if trimmed != "" {
+				perpMarketSymbols = append(perpMarketSymbols, trimmed)
+			}
+		}
+	}
+
+	// load node info endpoint from env var with default fallback
+	nodeInfoEndpoint := os.Getenv("NODE_INFO_ENDPOINT")
+	if nodeInfoEndpoint == "" {
+		nodeInfoEndpoint = "https://api.hyperliquid.xyz/info"
+	}
+
 	config := Config{
 		NodeHome:               nodeHome,
 		NodeBinary:             nodeBinary,
@@ -113,6 +134,8 @@ func LoadConfig(flags *Flags) Config {
 		ReplicaBufferSize:      replicaBufferSize,
 		EnableValidatorRTT:     false,
 		SpotAssetSymbols:       spotAssetSymbols,
+		PerpMarketSymbols:      perpMarketSymbols,
+		NodeInfoEndpoint:       nodeInfoEndpoint,
 		MetricsAddr:            flags.MetricsAddr,
 		LogLevel:               flags.LogLevel,
 		LogFormat:              flags.LogFormat,

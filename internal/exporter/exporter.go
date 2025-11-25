@@ -35,6 +35,7 @@ func Start(ctx context.Context, cfg config.Config) {
 	gossipErrCh := make(chan error, 1)
 	hip3OracleErrCh := make(chan error, 1)
 	spotAssetsErrCh := make(chan error, 1)
+	perpMarketsErrCh := make(chan error, 1)
 
 	logger.InfoComponent("core", "Initializing block monitor...")
 	go monitors.StartBlockMonitor(monitorCtx, cfg, blockErrCh)
@@ -68,6 +69,9 @@ func Start(ctx context.Context, cfg config.Config) {
 
 	logger.InfoComponent("spot_assets", "Initializing Spot Assets monitor...")
 	go monitors.StartSpotAssetsMonitor(monitorCtx, cfg, spotAssetsErrCh)
+
+	logger.InfoComponent("perp_markets", "Initializing Perpetual Markets monitor...")
+	go monitors.StartPerpMarketsMonitor(monitorCtx, cfg, perpMarketsErrCh)
 
 	logger.InfoComponent("consensus", "Initializing Validator Status monitor...")
 	monitors.StartValidatorStatusMonitor(ctx, cfg, validatorStatusErrCh)
@@ -151,6 +155,8 @@ func Start(ctx context.Context, cfg config.Config) {
 			logger.ErrorComponent("oracle", "HIP3 oracle monitor error: %v", err)
 		case err := <-spotAssetsErrCh:
 			logger.ErrorComponent("spot_assets", "Spot assets monitor error: %v", err)
+		case err := <-perpMarketsErrCh:
+			logger.ErrorComponent("perp_markets", "Perpetual markets monitor error: %v", err)
 		case <-ctx.Done():
 			logger.InfoComponent("system", "Shutting down monitors...")
 			return

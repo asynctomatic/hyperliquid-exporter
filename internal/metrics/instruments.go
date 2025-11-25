@@ -133,6 +133,17 @@ var (
 	HLSpotAssetTotalSupplyGauge           api.Float64ObservableGauge
 	HLSpotAssetHoldersCountGauge          api.Int64ObservableGauge
 	HLSpotAssetSupplyDistributionGauge    api.Float64ObservableGauge
+
+	// Perpetual Markets metrics
+	HLPerpMarketMarkPrice       api.Float64ObservableGauge
+	HLPerpMarketFundingRate     api.Float64ObservableGauge
+	HLPerpMarketOpenInterest    api.Float64ObservableGauge
+	HLPerpMarket24hVolume       api.Float64ObservableGauge
+	HLPerpMarketPremium         api.Float64ObservableGauge
+	HLPerpMarketOraclePrice     api.Float64ObservableGauge
+	HLPerpMarketMidPrice        api.Float64ObservableGauge
+	HLPerpMarketImpactBid       api.Float64ObservableGauge
+	HLPerpMarketImpactAsk       api.Float64ObservableGauge
 )
 
 func createInstruments() error {
@@ -936,6 +947,79 @@ func createInstruments() error {
 	)
 	if err != nil {
 		return fmt.Errorf("failed to create spot asset supply distribution gauge: %w", err)
+	}
+
+	// Perpetual Markets metrics
+	HLPerpMarketMarkPrice, err = meter.Float64ObservableGauge(
+		"hl_perp_market_mark_price",
+		api.WithDescription("Current mark price for perpetual market"),
+	)
+	if err != nil {
+		return fmt.Errorf("failed to create perp market mark price gauge: %w", err)
+	}
+
+	HLPerpMarketFundingRate, err = meter.Float64ObservableGauge(
+		"hl_perp_market_funding_rate",
+		api.WithDescription("Current 8-hour funding rate for perpetual market"),
+	)
+	if err != nil {
+		return fmt.Errorf("failed to create perp market funding rate gauge: %w", err)
+	}
+
+	HLPerpMarketOpenInterest, err = meter.Float64ObservableGauge(
+		"hl_perp_market_open_interest",
+		api.WithDescription("Current open interest in base currency for perpetual market"),
+	)
+	if err != nil {
+		return fmt.Errorf("failed to create perp market open interest gauge: %w", err)
+	}
+
+	HLPerpMarket24hVolume, err = meter.Float64ObservableGauge(
+		"hl_perp_market_24h_volume",
+		api.WithDescription("24-hour trading volume (notional) for perpetual market"),
+	)
+	if err != nil {
+		return fmt.Errorf("failed to create perp market 24h volume gauge: %w", err)
+	}
+
+	HLPerpMarketPremium, err = meter.Float64ObservableGauge(
+		"hl_perp_market_premium",
+		api.WithDescription("Premium (mark price - oracle price) for perpetual market"),
+	)
+	if err != nil {
+		return fmt.Errorf("failed to create perp market premium gauge: %w", err)
+	}
+
+	HLPerpMarketOraclePrice, err = meter.Float64ObservableGauge(
+		"hl_perp_market_oracle_price",
+		api.WithDescription("Current oracle price for perpetual market"),
+	)
+	if err != nil {
+		return fmt.Errorf("failed to create perp market oracle price gauge: %w", err)
+	}
+
+	HLPerpMarketMidPrice, err = meter.Float64ObservableGauge(
+		"hl_perp_market_mid_price",
+		api.WithDescription("Current mid price from orderbook for perpetual market"),
+	)
+	if err != nil {
+		return fmt.Errorf("failed to create perp market mid price gauge: %w", err)
+	}
+
+	HLPerpMarketImpactBid, err = meter.Float64ObservableGauge(
+		"hl_perp_market_impact_bid",
+		api.WithDescription("Impact bid price for perpetual market"),
+	)
+	if err != nil {
+		return fmt.Errorf("failed to create perp market impact bid gauge: %w", err)
+	}
+
+	HLPerpMarketImpactAsk, err = meter.Float64ObservableGauge(
+		"hl_perp_market_impact_ask",
+		api.WithDescription("Impact ask price for perpetual market"),
+	)
+	if err != nil {
+		return fmt.Errorf("failed to create perp market impact ask gauge: %w", err)
 	}
 
 	return nil
