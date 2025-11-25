@@ -128,6 +128,11 @@ var (
 	HLHIP3OracleLatestHeightGauge             api.Int64ObservableGauge
 	HLHIP3OracleMarketsPerDeployerGauge       api.Int64ObservableGauge
 	HLHIP3OracleMarketLastUpdateTimeGauge     api.Int64ObservableGauge
+
+	// Spot Assets metrics
+	HLSpotAssetTotalSupplyGauge           api.Float64ObservableGauge
+	HLSpotAssetHoldersCountGauge          api.Int64ObservableGauge
+	HLSpotAssetSupplyDistributionGauge    api.Float64ObservableGauge
 )
 
 func createInstruments() error {
@@ -906,6 +911,31 @@ func createInstruments() error {
 	)
 	if err != nil {
 		return fmt.Errorf("failed to create HIP3 oracle market last update time gauge: %w", err)
+	}
+
+	// Spot Assets metrics
+	HLSpotAssetTotalSupplyGauge, err = meter.Float64ObservableGauge(
+		"hl_spot_asset_total_supply",
+		api.WithDescription("Total supply of spot asset"),
+	)
+	if err != nil {
+		return fmt.Errorf("failed to create spot asset total supply gauge: %w", err)
+	}
+
+	HLSpotAssetHoldersCountGauge, err = meter.Int64ObservableGauge(
+		"hl_spot_asset_holders_count",
+		api.WithDescription("Number of holders for spot asset"),
+	)
+	if err != nil {
+		return fmt.Errorf("failed to create spot asset holders count gauge: %w", err)
+	}
+
+	HLSpotAssetSupplyDistributionGauge, err = meter.Float64ObservableGauge(
+		"hl_spot_asset_supply_distribution",
+		api.WithDescription("Distribution of supply across holder balance ranges (percentage of holders in each range)"),
+	)
+	if err != nil {
+		return fmt.Errorf("failed to create spot asset supply distribution gauge: %w", err)
 	}
 
 	return nil

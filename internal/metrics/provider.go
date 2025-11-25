@@ -92,6 +92,11 @@ func getAllObservables() []api.Observable {
 		HLHIP3OracleLatestHeightGauge,
 		HLHIP3OracleMarketsPerDeployerGauge,
 		HLHIP3OracleMarketLastUpdateTimeGauge,
+
+		// Spot Assets metrics
+		HLSpotAssetTotalSupplyGauge,
+		HLSpotAssetHoldersCountGauge,
+		HLSpotAssetSupplyDistributionGauge,
 	}
 }
 

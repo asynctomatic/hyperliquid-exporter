@@ -2,6 +2,7 @@ package config
 
 import (
 	"os"
+	"strings"
 	"time"
 
 	"github.com/joho/godotenv"
@@ -26,6 +27,7 @@ type Config struct {
 	ReplicaDataDir         string
 	ReplicaBufferSize      int
 	EnableValidatorRTT     bool
+	SpotAssetSymbols       []string // List of spot asset symbols to monitor
 	MetricsAddr            string
 	LogLevel               string
 	LogFormat              string
@@ -46,6 +48,7 @@ type Flags struct {
 	ReplicaDataDir        string
 	ReplicaBufferSize     int
 	EnableValidatorRTT    *bool // to distinguish between not set and false
+	SpotAssetSymbols      string // Comma-separated list of spot asset symbols to monitor
 	MetricsAddr           string
 	LogLevel              string
 	LogFormat             string
@@ -81,6 +84,18 @@ func LoadConfig(flags *Flags) Config {
 	// always default buffer size
 	replicaBufferSize := 8 // 8MB default
 
+	// parse spot asset symbols from comma-separated string
+	var spotAssetSymbols []string
+	if flags.SpotAssetSymbols != "" {
+		symbols := strings.Split(flags.SpotAssetSymbols, ",")
+		for _, symbol := range symbols {
+			trimmed := strings.TrimSpace(symbol)
+			if trimmed != "" {
+				spotAssetSymbols = append(spotAssetSymbols, trimmed)
+			}
+		}
+	}
+
 	config := Config{
 		NodeHome:               nodeHome,
 		NodeBinary:             nodeBinary,
@@ -97,6 +112,7 @@ func LoadConfig(flags *Flags) Config {
 		ReplicaDataDir:         replicaDataDir,
 		ReplicaBufferSize:      replicaBufferSize,
 		EnableValidatorRTT:     false,
+		SpotAssetSymbols:       spotAssetSymbols,
 		MetricsAddr:            flags.MetricsAddr,
 		LogLevel:               flags.LogLevel,
 		LogFormat:              flags.LogFormat,

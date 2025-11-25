@@ -41,6 +41,7 @@ func main() {
 		fmt.Println("  --replica-data-dir Directory containing replica_cmds files (default: $NODE_HOME/data/replica_cmds)")
 		fmt.Println("  --replica-buffer-size Buffer size in MB for parsing replica files (default: 8)")
 		fmt.Println("  --enable-validator-rtt Enable validator RTT monitoring (true/false/auto, default: auto)")
+		fmt.Println("  --spot-assets Comma-separated list of spot asset symbols to monitor (e.g., USDC,PURR,HYPE)")
 		os.Exit(1)
 	}
 
@@ -59,6 +60,7 @@ func main() {
 	enableReplicaMetrics := startCmd.Bool("replica-metrics", false, "Enable replica commands transaction metrics")
 	enableValidatorRTT := startCmd.Bool("validator-rtt", false, "Enable validator RTT monitoring")
 	enableHIP3Oracle := startCmd.Bool("hip3-oracle", false, "Enable HIP3 oracle monitoring")
+	spotAssets := startCmd.String("spot-assets", "", "Comma-separated list of spot asset symbols to monitor (e.g., USDC,PURR,HYPE)")
 
 	switch os.Args[1] {
 	case "start":
@@ -97,6 +99,7 @@ func main() {
 		ReplicaBufferSize:     8,  // Always use default 8MB
 		EVMBlockTypeMetrics:   *enableEVM, // Always enable block type metrics when EVM is enabled
 		EnableValidatorRTT:    enableValidatorRTT, // Use the bool pointer directly
+		SpotAssetSymbols:      *spotAssets,
 	}
 
 	cfg := config.LoadConfig(flags)

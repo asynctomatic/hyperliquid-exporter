@@ -1266,3 +1266,61 @@ func SetHIP3OracleMarketLastUpdateTime(deployer string, market string, timestamp
 		labels: labels,
 	}
 }
+
+// Spot Asset metrics setters
+
+func SetSpotAssetTotalSupply(symbol string, supply float64) {
+	labels := []attribute.KeyValue{
+		attribute.String("symbol", symbol),
+	}
+
+	metricsMutex.Lock()
+	defer metricsMutex.Unlock()
+
+	if _, exists := labeledValues[HLSpotAssetTotalSupplyGauge]; !exists {
+		labeledValues[HLSpotAssetTotalSupplyGauge] = make(map[string]labeledValue)
+	}
+
+	labeledValues[HLSpotAssetTotalSupplyGauge][symbol] = labeledValue{
+		value:  supply,
+		labels: labels,
+	}
+}
+
+func SetSpotAssetHoldersCount(symbol string, count int64) {
+	labels := []attribute.KeyValue{
+		attribute.String("symbol", symbol),
+	}
+
+	metricsMutex.Lock()
+	defer metricsMutex.Unlock()
+
+	if _, exists := labeledValues[HLSpotAssetHoldersCountGauge]; !exists {
+		labeledValues[HLSpotAssetHoldersCountGauge] = make(map[string]labeledValue)
+	}
+
+	labeledValues[HLSpotAssetHoldersCountGauge][symbol] = labeledValue{
+		value:  float64(count),
+		labels: labels,
+	}
+}
+
+func SetSpotAssetSupplyDistribution(symbol string, bucket string, count float64) {
+	key := fmt.Sprintf("%s:%s", symbol, bucket)
+	labels := []attribute.KeyValue{
+		attribute.String("symbol", symbol),
+		attribute.String("bucket", bucket),
+	}
+
+	metricsMutex.Lock()
+	defer metricsMutex.Unlock()
+
+	if _, exists := labeledValues[HLSpotAssetSupplyDistributionGauge]; !exists {
+		labeledValues[HLSpotAssetSupplyDistributionGauge] = make(map[string]labeledValue)
+	}
+
+	labeledValues[HLSpotAssetSupplyDistributionGauge][key] = labeledValue{
+		value:  count,
+		labels: labels,
+	}
+}
