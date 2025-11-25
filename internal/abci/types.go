@@ -27,3 +27,16 @@ type ValidatorProfile struct {
 	Moniker string
 	IP      string
 }
+
+type SpotAssetHolder struct {
+	Address string
+	Balance int64
+}
+
+type SpotAssetState struct {
+	AssetID int64
+	Symbol string
+	Decimals int64
+	TotalSupply int64
+	Holders []SpotAssetHolder
+}

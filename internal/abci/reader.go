@@ -147,6 +147,183 @@ func (r *Reader) ReadContextWithAccounts(filePath string) (*ContextInfo, int64, 
 	return ctx, accountCount, nil
 }
 
+func (r *Reader) ReadSpotAssetStates(filePath string) ([]SpotAssetState, error) {
+	file, err := os.Open(filePath)
+	if err != nil {
+		return nil, fmt.Errorf("open file: %w", err)
+	}
+	defer file.Close()
+
+	reader := bufio.NewReaderSize(file, r.bufferSize)
+
+	// Structure for spot clearing house user states
+	var data struct {
+		Exchange struct {
+			ClearingHouse struct {
+				Meta struct {
+					TokenInfos []interface{} `msgpack:"token_infos"`
+				} `msgpack:"meta"`
+				UserStates [][]interface{} `msgpack:"user_states"`
+			} `msgpack:"spot_clearinghouse"`
+		} `msgpack:"exchange"`
+	}
+
+	decoder := msgpack.NewDecoder(reader)
+	decoder.SetCustomStructTag("msgpack")
+
+	if err := decoder.Decode(&data); err != nil {
+		return nil, fmt.Errorf("decode: %w", err)
+	}
+
+	// Parse token infos to get asset metadata
+	assetMetadata := make(map[int64]struct {
+		Symbol   string
+		Decimals int64
+	})
+
+	for assetID, tokenInfo := range data.Exchange.ClearingHouse.Meta.TokenInfos {
+		if tokenInfoMap, ok := tokenInfo.(map[string]interface{}); ok {
+			metadata := struct {
+				Symbol   string
+				Decimals int64
+			}{}
+
+			// Extract spec object
+			if specMap, ok := tokenInfoMap["spec"].(map[string]interface{}); ok {
+				// Extract symbol from spec.name
+				if name, ok := specMap["name"].(string); ok {
+					metadata.Symbol = name
+				}
+
+				// Extract decimals from spec.weiDecimals (note camelCase)
+				if weiDecimals, ok := specMap["weiDecimals"].(int64); ok {
+					metadata.Decimals = weiDecimals
+				} else if weiDecimals, ok := specMap["weiDecimals"].(uint8); ok {
+					metadata.Decimals = int64(weiDecimals)
+				} else if weiDecimals, ok := specMap["weiDecimals"].(int8); ok {
+					metadata.Decimals = int64(weiDecimals)
+				}
+			}
+
+			assetMetadata[int64(assetID)] = metadata
+		}
+	}
+
+	// Group balances by asset ID
+	assetBalances := make(map[int64][]SpotAssetHolder)
+
+	// Parse user states
+	for _, entry := range data.Exchange.ClearingHouse.UserStates {
+		if len(entry) != 2 {
+			continue
+		}
+
+		// 1st element is the address
+		address, ok := entry[0].(string)
+		if !ok {
+			continue
+		}
+
+		// 2nd element is the spot balances map
+		balancesMap, ok := entry[1].(map[string]interface{})
+		if !ok {
+			continue
+		}
+
+		// Extract balances
+		balancesRaw, ok := balancesMap["b"].([]interface{})
+		if !ok {
+			continue
+		}
+
+		// Parse balances
+		for _, balanceRaw := range balancesRaw {
+			balance, ok := balanceRaw.([]interface{})
+			if !ok || len(balance) != 2 {
+				continue
+			}
+
+			// 1st element is the asset ID
+			var assetID int64
+			switch val := balance[0].(type) {
+			case uint8:
+				assetID = int64(val)
+			case int8:
+				assetID = int64(val)
+			case uint16:
+				assetID = int64(val)
+			case int16:
+				assetID = int64(val)
+			default:
+				continue
+			}
+
+			// 2nd element is the balance map
+			userBalanceMap, ok := balance[1].(map[string]interface{})
+			if !ok {
+				continue
+			}
+
+			// Extract total balance
+			var balanceValue int64
+			switch val := userBalanceMap["t"].(type) {
+			case int64:
+				balanceValue = val
+			case int32:
+				balanceValue = int64(val)
+			case int16:
+				balanceValue = int64(val)
+			case int8:
+				balanceValue = int64(val)
+			case uint8:
+				balanceValue = int64(val)
+			case uint16:
+				balanceValue = int64(val)
+			case uint32:
+				balanceValue = int64(val)
+			case uint64:
+				balanceValue = int64(val)
+			case nil:
+				continue
+			default:
+				continue
+			}
+
+			// Skip zero balances
+			if balanceValue <= 0 {
+				continue
+			}
+
+			// Add holder to asset
+			assetBalances[assetID] = append(assetBalances[assetID], SpotAssetHolder{
+				Address: address,
+				Balance: balanceValue,
+			})
+		}
+	}
+
+	// Build SpotAssetState array
+	var assetStates []SpotAssetState
+	for assetID, holders := range assetBalances {
+		// Calculate total supply
+		var totalSupply int64
+		for _, holder := range holders {
+			totalSupply += holder.Balance
+		}
+
+		metadata := assetMetadata[assetID]
+		assetStates = append(assetStates, SpotAssetState{
+			AssetID:     assetID,
+			Symbol:      metadata.Symbol,
+			Decimals:    metadata.Decimals,
+			TotalSupply: totalSupply,
+			Holders:     holders,
+		})
+	}
+
+	return assetStates, nil
+}
+
 // reads validator profiles from ABCI state
 func (r *Reader) ReadValidatorProfiles(filePath string) ([]ValidatorProfile, error) {
 	file, err := os.Open(filePath)
