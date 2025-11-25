@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/validaoxyz/hyperliquid-exporter/internal/config"
@@ -13,6 +14,13 @@ import (
 )
 
 var perpMarketsResolver *hyperliquidapi.Resolver
+
+// symbolInfo holds parsed symbol information
+type symbolInfo struct {
+	fullSymbol string // full symbol as provided (e.g., "flx:BTC" or "BTC")
+	dex        string // dex prefix (empty string for native)
+	market     string // market name without dex prefix (e.g., "BTC")
+}
 
 // monitors perpetual market data from the info API endpoint
 func StartPerpMarketsMonitor(ctx context.Context, cfg config.Config, errCh chan<- error) {
@@ -52,27 +60,90 @@ func StartPerpMarketsMonitor(ctx context.Context, cfg config.Config, errCh chan<
 
 // fetches and processes perpetual market data
 func updatePerpMarketMetrics(ctx context.Context, cfg config.Config) error {
-	// fetch market data using resolver
-	marketData, err := perpMarketsResolver.GetMarketData(ctx)
-	if err != nil {
-		return fmt.Errorf("failed to fetch market data: %w", err)
+	// parse symbols and group by dex
+	symbolsByDex := groupSymbolsByDex(cfg.PerpMarketSymbols)
+
+	// fetch data for each dex
+	for dex, symbols := range symbolsByDex {
+		dexLabel := dex
+		if dexLabel == "" {
+			dexLabel = "native"
+		}
+
+		logger.Debug("Fetching markets for dex: %s (markets: %v)", dexLabel, getMarketNames(symbols))
+
+		marketData, err := perpMarketsResolver.GetMarketData(ctx, dex)
+		if err != nil {
+			logger.ErrorComponent("perp_markets", "Failed to fetch market data for dex %s: %v", dexLabel, err)
+			continue
+		}
+
+		if err := processMarketData(marketData, symbols, dex); err != nil {
+			logger.ErrorComponent("perp_markets", "Failed to process market data for dex %s: %v", dexLabel, err)
+			continue
+		}
 	}
 
-	return processMarketData(marketData, cfg.PerpMarketSymbols)
+	return nil
+}
+
+// groupSymbolsByDex parses symbols and groups them by dex
+func groupSymbolsByDex(symbols []string) map[string][]symbolInfo {
+	result := make(map[string][]symbolInfo)
+
+	for _, fullSymbol := range symbols {
+		dex, market := extractDexAndMarket(fullSymbol)
+
+		info := symbolInfo{
+			fullSymbol: fullSymbol,
+			dex:        dex,
+			market:     market,
+		}
+
+		result[dex] = append(result[dex], info)
+	}
+
+	return result
+}
+
+// extractDexAndMarket splits symbol into dex and market parts
+// Examples: "flx:BTC" -> ("flx", "BTC"), "BTC" -> ("", "BTC")
+func extractDexAndMarket(symbol string) (dex string, market string) {
+	parts := strings.Split(symbol, ":")
+	if len(parts) >= 2 {
+		return parts[0], parts[1]
+	}
+	return "", symbol
+}
+
+// getMarketNames extracts just market names from symbolInfo slice
+func getMarketNames(symbols []symbolInfo) []string {
+	names := make([]string, len(symbols))
+	for i, s := range symbols {
+		names[i] = s.market
+	}
+	return names
 }
 
 // processes market data and updates metrics
-func processMarketData(data *hyperliquidapi.MarketData, enabledSymbols []string) error {
-	// create map for fast symbol lookup
-	enabledMap := make(map[string]bool)
-	for _, symbol := range enabledSymbols {
-		enabledMap[symbol] = true
+func processMarketData(data *hyperliquidapi.MarketData, symbols []symbolInfo, dex string) error {
+	// create map for fast market name lookup
+	// API returns full name with dex prefix for dex markets (e.g., "flx:TSLA")
+	// and just market name for native markets (e.g., "BTC")
+	symbolMap := make(map[string]symbolInfo)
+	for _, s := range symbols {
+		apiName := s.market
+		if dex != "" {
+			apiName = dex + ":" + s.market
+		}
+		symbolMap[apiName] = s
 	}
 
 	// iterate through markets (universe and contexts have matching indices)
 	for i, asset := range data.Universe {
 		// skip if not in enabled list
-		if !enabledMap[asset.Name] {
+		symbolInfo, found := symbolMap[asset.Name]
+		if !found {
 			continue
 		}
 
@@ -81,37 +152,37 @@ func processMarketData(data *hyperliquidapi.MarketData, enabledSymbols []string)
 		// parse string values to float64
 		markPx, err := parseFloatValue(context.MarkPx)
 		if err != nil {
-			logger.Debug("Failed to parse mark price for %s: %v", asset.Name, err)
+			logger.Debug("Failed to parse mark price for %s: %v", symbolInfo.fullSymbol, err)
 			continue
 		}
 
 		funding, err := parseFloatValue(context.Funding)
 		if err != nil {
-			logger.Debug("Failed to parse funding for %s: %v", asset.Name, err)
+			logger.Debug("Failed to parse funding for %s: %v", symbolInfo.fullSymbol, err)
 			funding = 0 // non-fatal, use 0
 		}
 
 		openInterest, err := parseFloatValue(context.OpenInterest)
 		if err != nil {
-			logger.Debug("Failed to parse open interest for %s: %v", asset.Name, err)
+			logger.Debug("Failed to parse open interest for %s: %v", symbolInfo.fullSymbol, err)
 			openInterest = 0
 		}
 
 		volume, err := parseFloatValue(context.DayNtlVlm)
 		if err != nil {
-			logger.Debug("Failed to parse 24h volume for %s: %v", asset.Name, err)
+			logger.Debug("Failed to parse 24h volume for %s: %v", symbolInfo.fullSymbol, err)
 			volume = 0
 		}
 
 		premium, err := parseFloatValue(context.Premium)
 		if err != nil {
-			logger.Debug("Failed to parse premium for %s: %v", asset.Name, err)
+			logger.Debug("Failed to parse premium for %s: %v", symbolInfo.fullSymbol, err)
 			premium = 0
 		}
 
 		oraclePx, err := parseFloatValue(context.OraclePx)
 		if err != nil {
-			logger.Debug("Failed to parse oracle price for %s: %v", asset.Name, err)
+			logger.Debug("Failed to parse oracle price for %s: %v", symbolInfo.fullSymbol, err)
 			oraclePx = markPx // fallback to mark price
 		}
 
@@ -133,24 +204,24 @@ func processMarketData(data *hyperliquidapi.MarketData, enabledSymbols []string)
 			}
 		}
 
-		// set metrics
-		metrics.SetPerpMarketMarkPrice(asset.Name, markPx)
-		metrics.SetPerpMarketFundingRate(asset.Name, funding)
-		metrics.SetPerpMarketOpenInterest(asset.Name, openInterest)
-		metrics.SetPerpMarket24hVolume(asset.Name, volume)
-		metrics.SetPerpMarketPremium(asset.Name, premium)
-		metrics.SetPerpMarketOraclePrice(asset.Name, oraclePx)
-		metrics.SetPerpMarketMidPrice(asset.Name, midPx)
+		// set metrics using full symbol name (with dex prefix if applicable)
+		metrics.SetPerpMarketMarkPrice(symbolInfo.fullSymbol, markPx)
+		metrics.SetPerpMarketFundingRate(symbolInfo.fullSymbol, funding)
+		metrics.SetPerpMarketOpenInterest(symbolInfo.fullSymbol, openInterest)
+		metrics.SetPerpMarket24hVolume(symbolInfo.fullSymbol, volume)
+		metrics.SetPerpMarketPremium(symbolInfo.fullSymbol, premium)
+		metrics.SetPerpMarketOraclePrice(symbolInfo.fullSymbol, oraclePx)
+		metrics.SetPerpMarketMidPrice(symbolInfo.fullSymbol, midPx)
 
 		if impactBid > 0 {
-			metrics.SetPerpMarketImpactBid(asset.Name, impactBid)
+			metrics.SetPerpMarketImpactBid(symbolInfo.fullSymbol, impactBid)
 		}
 		if impactAsk > 0 {
-			metrics.SetPerpMarketImpactAsk(asset.Name, impactAsk)
+			metrics.SetPerpMarketImpactAsk(symbolInfo.fullSymbol, impactAsk)
 		}
 
 		logger.Debug("Perpetual market %s: mark=%.2f, funding=%.6f, OI=%.2f, vol=%.2f",
-			asset.Name, markPx, funding, openInterest, volume)
+			symbolInfo.fullSymbol, markPx, funding, openInterest, volume)
 	}
 
 	return nil

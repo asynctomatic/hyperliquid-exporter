@@ -49,7 +49,8 @@ type ValidatorSummary struct {
 
 // request to the HL API
 type APIRequest struct {
-	Type string `json:"type"`
+	Type string  `json:"type"`
+	Dex  *string `json:"dex,omitempty"` // optional dex field for market data
 }
 
 // creates a new HL API resolver
@@ -141,8 +142,12 @@ func (r *Resolver) GetSignerToValidatorMapping() map[string]string {
 }
 
 // fetches market data (metaAndAssetCtxs) from the info API
-func (r *Resolver) GetMarketData(ctx context.Context) (*MarketData, error) {
+// dex is optional - if empty string, fetches native Hyperliquid markets
+func (r *Resolver) GetMarketData(ctx context.Context, dex string) (*MarketData, error) {
 	req := APIRequest{Type: "metaAndAssetCtxs"}
+	if dex != "" {
+		req.Dex = &dex
+	}
 
 	var response []json.RawMessage
 	if err := r.makeAPICall(ctx, "/info", req, &response); err != nil {
