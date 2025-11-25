@@ -26,3 +26,17 @@ type MarketData struct {
 	Universe []AssetInfo
 	Contexts []AssetContext
 }
+
+// orderbook level
+type OrderLevel struct {
+	Px string `json:"px"` // price
+	Sz string `json:"sz"` // size
+	N  int    `json:"n"`  // number of orders
+}
+
+// L2 orderbook response
+type L2Book struct {
+	Coin   string          `json:"coin"`
+	Levels [2][]OrderLevel `json:"levels"` // [0] = bids, [1] = asks
+	Time   int64           `json:"time"`
+}

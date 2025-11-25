@@ -183,6 +183,27 @@ func (r *Resolver) GetMarketData(ctx context.Context, dex string) (*MarketData, 
 	}, nil
 }
 
+// fetches L2 orderbook for a specific coin
+func (r *Resolver) GetL2Book(ctx context.Context, coin string) (*L2Book, error) {
+	// create custom request with coin field
+	type l2Request struct {
+		Type string `json:"type"`
+		Coin string `json:"coin"`
+	}
+
+	l2Req := l2Request{
+		Type: "l2Book",
+		Coin: coin,
+	}
+
+	var book L2Book
+	if err := r.makeAPICall(ctx, "/info", l2Req, &book); err != nil {
+		return nil, fmt.Errorf("failed to fetch L2 book: %w", err)
+	}
+
+	return &book, nil
+}
+
 // makes actual API call
 func (r *Resolver) fetchValidatorSummaries(ctx context.Context) ([]ValidatorSummary, error) {
 	req := APIRequest{Type: "validatorSummaries"}

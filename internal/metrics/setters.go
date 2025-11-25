@@ -1488,3 +1488,147 @@ func SetPerpMarketImpactAsk(symbol string, price float64) {
 		labels: labels,
 	}
 }
+
+func SetPerpMarketLiquidityBid5bps(symbol string, liquidity float64) {
+	labels := []attribute.KeyValue{
+		attribute.String("symbol", symbol),
+	}
+
+	metricsMutex.Lock()
+	defer metricsMutex.Unlock()
+
+	if _, exists := labeledValues[HLPerpMarketLiquidityBid5bps]; !exists {
+		labeledValues[HLPerpMarketLiquidityBid5bps] = make(map[string]labeledValue)
+	}
+
+	labeledValues[HLPerpMarketLiquidityBid5bps][symbol] = labeledValue{
+		value:  liquidity,
+		labels: labels,
+	}
+}
+
+func SetPerpMarketLiquidityBid10bps(symbol string, liquidity float64) {
+	labels := []attribute.KeyValue{
+		attribute.String("symbol", symbol),
+	}
+
+	metricsMutex.Lock()
+	defer metricsMutex.Unlock()
+
+	if _, exists := labeledValues[HLPerpMarketLiquidityBid10bps]; !exists {
+		labeledValues[HLPerpMarketLiquidityBid10bps] = make(map[string]labeledValue)
+	}
+
+	labeledValues[HLPerpMarketLiquidityBid10bps][symbol] = labeledValue{
+		value:  liquidity,
+		labels: labels,
+	}
+}
+
+func SetPerpMarketLiquidityBid50bps(symbol string, liquidity float64) {
+	labels := []attribute.KeyValue{
+		attribute.String("symbol", symbol),
+	}
+
+	metricsMutex.Lock()
+	defer metricsMutex.Unlock()
+
+	if _, exists := labeledValues[HLPerpMarketLiquidityBid50bps]; !exists {
+		labeledValues[HLPerpMarketLiquidityBid50bps] = make(map[string]labeledValue)
+	}
+
+	labeledValues[HLPerpMarketLiquidityBid50bps][symbol] = labeledValue{
+		value:  liquidity,
+		labels: labels,
+	}
+}
+
+func SetPerpMarketLiquidityBid100bps(symbol string, liquidity float64) {
+	labels := []attribute.KeyValue{
+		attribute.String("symbol", symbol),
+	}
+
+	metricsMutex.Lock()
+	defer metricsMutex.Unlock()
+
+	if _, exists := labeledValues[HLPerpMarketLiquidityBid100bps]; !exists {
+		labeledValues[HLPerpMarketLiquidityBid100bps] = make(map[string]labeledValue)
+	}
+
+	labeledValues[HLPerpMarketLiquidityBid100bps][symbol] = labeledValue{
+		value:  liquidity,
+		labels: labels,
+	}
+}
+
+func SetPerpMarketLiquidityAsk5bps(symbol string, liquidity float64) {
+	labels := []attribute.KeyValue{
+		attribute.String("symbol", symbol),
+	}
+
+	metricsMutex.Lock()
+	defer metricsMutex.Unlock()
+
+	if _, exists := labeledValues[HLPerpMarketLiquidityAsk5bps]; !exists {
+		labeledValues[HLPerpMarketLiquidityAsk5bps] = make(map[string]labeledValue)
+	}
+
+	labeledValues[HLPerpMarketLiquidityAsk5bps][symbol] = labeledValue{
+		value:  liquidity,
+		labels: labels,
+	}
+}
+
+func SetPerpMarketLiquidityAsk10bps(symbol string, liquidity float64) {
+	labels := []attribute.KeyValue{
+		attribute.String("symbol", symbol),
+	}
+
+	metricsMutex.Lock()
+	defer metricsMutex.Unlock()
+
+	if _, exists := labeledValues[HLPerpMarketLiquidityAsk10bps]; !exists {
+		labeledValues[HLPerpMarketLiquidityAsk10bps] = make(map[string]labeledValue)
+	}
+
+	labeledValues[HLPerpMarketLiquidityAsk10bps][symbol] = labeledValue{
+		value:  liquidity,
+		labels: labels,
+	}
+}
+
+func SetPerpMarketLiquidityAsk50bps(symbol string, liquidity float64) {
+	labels := []attribute.KeyValue{
+		attribute.String("symbol", symbol),
+	}
+
+	metricsMutex.Lock()
+	defer metricsMutex.Unlock()
+
+	if _, exists := labeledValues[HLPerpMarketLiquidityAsk50bps]; !exists {
+		labeledValues[HLPerpMarketLiquidityAsk50bps] = make(map[string]labeledValue)
+	}
+
+	labeledValues[HLPerpMarketLiquidityAsk50bps][symbol] = labeledValue{
+		value:  liquidity,
+		labels: labels,
+	}
+}
+
+func SetPerpMarketLiquidityAsk100bps(symbol string, liquidity float64) {
+	labels := []attribute.KeyValue{
+		attribute.String("symbol", symbol),
+	}
+
+	metricsMutex.Lock()
+	defer metricsMutex.Unlock()
+
+	if _, exists := labeledValues[HLPerpMarketLiquidityAsk100bps]; !exists {
+		labeledValues[HLPerpMarketLiquidityAsk100bps] = make(map[string]labeledValue)
+	}
+
+	labeledValues[HLPerpMarketLiquidityAsk100bps][symbol] = labeledValue{
+		value:  liquidity,
+		labels: labels,
+	}
+}

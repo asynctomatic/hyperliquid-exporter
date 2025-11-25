@@ -222,9 +222,100 @@ func processMarketData(data *hyperliquidapi.MarketData, symbols []symbolInfo, de
 
 		logger.Debug("Perpetual market %s: mark=%.2f, funding=%.6f, OI=%.2f, vol=%.2f",
 			symbolInfo.fullSymbol, markPx, funding, openInterest, volume)
+
+		// fetch orderbook and calculate liquidity depth
+		go fetchAndCalculateLiquidity(symbolInfo.fullSymbol, midPx)
 	}
 
 	return nil
+}
+
+// fetchAndCalculateLiquidity fetches orderbook and calculates liquidity depth at different bps levels
+func fetchAndCalculateLiquidity(symbol string, currentPrice float64) {
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	// fetch L2 book
+	book, err := perpMarketsResolver.GetL2Book(ctx, symbol)
+	if err != nil {
+		logger.Debug("Failed to fetch L2 book for %s: %v", symbol, err)
+		return
+	}
+
+	// calculate liquidity for each bps level
+	bpsLevels := []int{5, 10, 50, 100}
+	for _, bps := range bpsLevels {
+		// calculate bid liquidity (selling into bids)
+		bidLiquidity := calculateLiquidityDepth(book.Levels[0], currentPrice, bps, true)
+
+		// calculate ask liquidity (buying from asks)
+		askLiquidity := calculateLiquidityDepth(book.Levels[1], currentPrice, bps, false)
+
+		// set metrics
+		switch bps {
+		case 5:
+			metrics.SetPerpMarketLiquidityBid5bps(symbol, bidLiquidity)
+			metrics.SetPerpMarketLiquidityAsk5bps(symbol, askLiquidity)
+		case 10:
+			metrics.SetPerpMarketLiquidityBid10bps(symbol, bidLiquidity)
+			metrics.SetPerpMarketLiquidityAsk10bps(symbol, askLiquidity)
+		case 50:
+			metrics.SetPerpMarketLiquidityBid50bps(symbol, bidLiquidity)
+			metrics.SetPerpMarketLiquidityAsk50bps(symbol, askLiquidity)
+		case 100:
+			metrics.SetPerpMarketLiquidityBid100bps(symbol, bidLiquidity)
+			metrics.SetPerpMarketLiquidityAsk100bps(symbol, askLiquidity)
+		}
+	}
+
+	logger.Debug("Calculated liquidity depth for %s", symbol)
+}
+
+// calculateLiquidityDepth calculates notional amount to move price by X bps
+// isBid: true for bids (selling), false for asks (buying)
+func calculateLiquidityDepth(levels []hyperliquidapi.OrderLevel, currentPrice float64, bps int, isBid bool) float64 {
+	if currentPrice == 0 {
+		return 0
+	}
+
+	// calculate target price
+	bpsFactor := float64(bps) / 10000.0
+	var targetPrice float64
+	if isBid {
+		// selling into bids: target is lower price
+		targetPrice = currentPrice * (1 - bpsFactor)
+	} else {
+		// buying from asks: target is higher price
+		targetPrice = currentPrice * (1 + bpsFactor)
+	}
+
+	// accumulate notional until reaching target price
+	var totalNotional float64
+
+	for _, level := range levels {
+		px, err := parseFloatValue(level.Px)
+		if err != nil {
+			continue
+		}
+
+		sz, err := parseFloatValue(level.Sz)
+		if err != nil {
+			continue
+		}
+
+		// check if we've reached the target price
+		if isBid && px < targetPrice {
+			break
+		}
+		if !isBid && px > targetPrice {
+			break
+		}
+
+		// accumulate notional (price * size)
+		totalNotional += px * sz
+	}
+
+	return totalNotional
 }
 
 // helper to parse string to float64

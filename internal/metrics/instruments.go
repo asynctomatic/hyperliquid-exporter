@@ -135,15 +135,23 @@ var (
 	HLSpotAssetSupplyDistributionGauge    api.Float64ObservableGauge
 
 	// Perpetual Markets metrics
-	HLPerpMarketMarkPrice       api.Float64ObservableGauge
-	HLPerpMarketFundingRate     api.Float64ObservableGauge
-	HLPerpMarketOpenInterest    api.Float64ObservableGauge
-	HLPerpMarket24hVolume       api.Float64ObservableGauge
-	HLPerpMarketPremium         api.Float64ObservableGauge
-	HLPerpMarketOraclePrice     api.Float64ObservableGauge
-	HLPerpMarketMidPrice        api.Float64ObservableGauge
-	HLPerpMarketImpactBid       api.Float64ObservableGauge
-	HLPerpMarketImpactAsk       api.Float64ObservableGauge
+	HLPerpMarketMarkPrice          api.Float64ObservableGauge
+	HLPerpMarketFundingRate        api.Float64ObservableGauge
+	HLPerpMarketOpenInterest       api.Float64ObservableGauge
+	HLPerpMarket24hVolume          api.Float64ObservableGauge
+	HLPerpMarketPremium            api.Float64ObservableGauge
+	HLPerpMarketOraclePrice        api.Float64ObservableGauge
+	HLPerpMarketMidPrice           api.Float64ObservableGauge
+	HLPerpMarketImpactBid          api.Float64ObservableGauge
+	HLPerpMarketImpactAsk          api.Float64ObservableGauge
+	HLPerpMarketLiquidityBid5bps   api.Float64ObservableGauge
+	HLPerpMarketLiquidityBid10bps  api.Float64ObservableGauge
+	HLPerpMarketLiquidityBid50bps  api.Float64ObservableGauge
+	HLPerpMarketLiquidityBid100bps api.Float64ObservableGauge
+	HLPerpMarketLiquidityAsk5bps   api.Float64ObservableGauge
+	HLPerpMarketLiquidityAsk10bps  api.Float64ObservableGauge
+	HLPerpMarketLiquidityAsk50bps  api.Float64ObservableGauge
+	HLPerpMarketLiquidityAsk100bps api.Float64ObservableGauge
 )
 
 func createInstruments() error {
@@ -1020,6 +1028,70 @@ func createInstruments() error {
 	)
 	if err != nil {
 		return fmt.Errorf("failed to create perp market impact ask gauge: %w", err)
+	}
+
+	HLPerpMarketLiquidityBid5bps, err = meter.Float64ObservableGauge(
+		"hl_perp_market_liquidity_bid_5bps",
+		api.WithDescription("Notional amount to move bid price by 5 bps"),
+	)
+	if err != nil {
+		return fmt.Errorf("failed to create perp market liquidity bid 5bps gauge: %w", err)
+	}
+
+	HLPerpMarketLiquidityBid10bps, err = meter.Float64ObservableGauge(
+		"hl_perp_market_liquidity_bid_10bps",
+		api.WithDescription("Notional amount to move bid price by 10 bps"),
+	)
+	if err != nil {
+		return fmt.Errorf("failed to create perp market liquidity bid 10bps gauge: %w", err)
+	}
+
+	HLPerpMarketLiquidityBid50bps, err = meter.Float64ObservableGauge(
+		"hl_perp_market_liquidity_bid_50bps",
+		api.WithDescription("Notional amount to move bid price by 50 bps"),
+	)
+	if err != nil {
+		return fmt.Errorf("failed to create perp market liquidity bid 50bps gauge: %w", err)
+	}
+
+	HLPerpMarketLiquidityBid100bps, err = meter.Float64ObservableGauge(
+		"hl_perp_market_liquidity_bid_100bps",
+		api.WithDescription("Notional amount to move bid price by 100 bps"),
+	)
+	if err != nil {
+		return fmt.Errorf("failed to create perp market liquidity bid 100bps gauge: %w", err)
+	}
+
+	HLPerpMarketLiquidityAsk5bps, err = meter.Float64ObservableGauge(
+		"hl_perp_market_liquidity_ask_5bps",
+		api.WithDescription("Notional amount to move ask price by 5 bps"),
+	)
+	if err != nil {
+		return fmt.Errorf("failed to create perp market liquidity ask 5bps gauge: %w", err)
+	}
+
+	HLPerpMarketLiquidityAsk10bps, err = meter.Float64ObservableGauge(
+		"hl_perp_market_liquidity_ask_10bps",
+		api.WithDescription("Notional amount to move ask price by 10 bps"),
+	)
+	if err != nil {
+		return fmt.Errorf("failed to create perp market liquidity ask 10bps gauge: %w", err)
+	}
+
+	HLPerpMarketLiquidityAsk50bps, err = meter.Float64ObservableGauge(
+		"hl_perp_market_liquidity_ask_50bps",
+		api.WithDescription("Notional amount to move ask price by 50 bps"),
+	)
+	if err != nil {
+		return fmt.Errorf("failed to create perp market liquidity ask 50bps gauge: %w", err)
+	}
+
+	HLPerpMarketLiquidityAsk100bps, err = meter.Float64ObservableGauge(
+		"hl_perp_market_liquidity_ask_100bps",
+		api.WithDescription("Notional amount to move ask price by 100 bps"),
+	)
+	if err != nil {
+		return fmt.Errorf("failed to create perp market liquidity ask 100bps gauge: %w", err)
 	}
 
 	return nil

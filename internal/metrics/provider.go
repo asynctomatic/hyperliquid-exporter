@@ -108,6 +108,14 @@ func getAllObservables() []api.Observable {
 		HLPerpMarketMidPrice,
 		HLPerpMarketImpactBid,
 		HLPerpMarketImpactAsk,
+		HLPerpMarketLiquidityBid5bps,
+		HLPerpMarketLiquidityBid10bps,
+		HLPerpMarketLiquidityBid50bps,
+		HLPerpMarketLiquidityBid100bps,
+		HLPerpMarketLiquidityAsk5bps,
+		HLPerpMarketLiquidityAsk10bps,
+		HLPerpMarketLiquidityAsk50bps,
+		HLPerpMarketLiquidityAsk100bps,
 	}
 }
 
