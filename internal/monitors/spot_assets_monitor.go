@@ -77,10 +77,29 @@ func StartSpotAssetsMonitor(ctx context.Context, cfg config.Config, errCh chan<-
 func processPeriodicSnapshotForAssets(cfg config.Config, reader *abci.Reader, enabledSymbols []string) error {
 	stateDir := filepath.Join(cfg.NodeHome, "data/periodic_abci_states")
 
-	// find the latest snapshot
-	entries, err := os.ReadDir(stateDir)
+	// read date directories (e.g., 20251125, 20251124, etc.)
+	dateDirs, err := os.ReadDir(stateDir)
 	if err != nil {
 		return fmt.Errorf("read state dir: %w", err)
+	}
+
+	// find the latest date directory
+	var latestDateDir string
+	for i := len(dateDirs) - 1; i >= 0; i-- {
+		if dateDirs[i].IsDir() {
+			latestDateDir = filepath.Join(stateDir, dateDirs[i].Name())
+			break
+		}
+	}
+
+	if latestDateDir == "" {
+		return fmt.Errorf("no date directories found in %s", stateDir)
+	}
+
+	// find the latest .rmp file in the latest date directory
+	entries, err := os.ReadDir(latestDateDir)
+	if err != nil {
+		return fmt.Errorf("read date dir %s: %w", latestDateDir, err)
 	}
 
 	var latestFile string
@@ -98,12 +117,12 @@ func processPeriodicSnapshotForAssets(cfg config.Config, reader *abci.Reader, en
 
 		if info.ModTime().After(latestTime) {
 			latestTime = info.ModTime()
-			latestFile = filepath.Join(stateDir, entry.Name())
+			latestFile = filepath.Join(latestDateDir, entry.Name())
 		}
 	}
 
 	if latestFile == "" {
-		return fmt.Errorf("no snapshot files found")
+		return fmt.Errorf("no snapshot files found in %s", latestDateDir)
 	}
 
 	return processStateForAssets(latestFile, reader, enabledSymbols)
