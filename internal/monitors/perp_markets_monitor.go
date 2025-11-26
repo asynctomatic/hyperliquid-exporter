@@ -76,8 +76,8 @@ func StartPerpMarketsMonitor(ctx context.Context, cfg config.Config, errCh chan<
 		time.Sleep(5 * time.Second)
 
 		// process immediately on start
-		if err := updatePerpLeverageMetrics(cfg); err != nil {
-			errCh <- fmt.Errorf("perp leverage monitor: %w", err)
+		if err := updatePerpStateMetrics(cfg); err != nil {
+			errCh <- fmt.Errorf("perp state monitor: %w", err)
 		}
 
 		for {
@@ -85,8 +85,8 @@ func StartPerpMarketsMonitor(ctx context.Context, cfg config.Config, errCh chan<
 			case <-ctx.Done():
 				return
 			case <-ticker.C:
-				if err := updatePerpLeverageMetrics(cfg); err != nil {
-					errCh <- fmt.Errorf("perp leverage monitor: %w", err)
+				if err := updatePerpStateMetrics(cfg); err != nil {
+					errCh <- fmt.Errorf("perp state monitor: %w", err)
 				}
 			}
 		}
@@ -407,10 +407,10 @@ func parseFloatValue(s string) (float64, error) {
 	return strconv.ParseFloat(s, 64)
 }
 
-// fetches and processes leverage distribution from ABCI state
-func updatePerpLeverageMetrics(cfg config.Config) error {
+// fetches and processes leverage distribution and funding multipliers from ABCI state
+func updatePerpStateMetrics(cfg config.Config) error {
 	// find ABCI state file (try live state first, then periodic snapshots)
-	stateFile := filepath.Join(cfg.NodeHome, "hyperliquid_data/abci_state.rmp")
+	stateFile := os.Getenv("STATE_FILE") // filepath.Join(cfg.NodeHome, "hyperliquid_data/abci_state.rmp")
 
 	// check if live state exists
 	if _, err := os.Stat(stateFile); os.IsNotExist(err) {
@@ -424,15 +424,10 @@ func updatePerpLeverageMetrics(cfg config.Config) error {
 	// create ABCI reader
 	reader := abci.NewReader(10)
 
-	// read leverage data
-	marketLeverages, err := reader.ReadPerpLeverageData(stateFile)
+	// read leverage data and funding multipliers
+	marketLeverages, fundingMultipliers, err := reader.ReadPerpLeverageData(stateFile)
 	if err != nil {
-		return fmt.Errorf("read leverage data: %w", err)
-	}
-
-	if len(marketLeverages) == 0 {
-		logger.Debug("No leverage data found in ABCI state")
-		return nil
+		return fmt.Errorf("read perp state data: %w", err)
 	}
 
 	// get market ID to symbol mapping
@@ -500,6 +495,21 @@ func updatePerpLeverageMetrics(cfg config.Config) error {
 		logger.Debug("Leverage distribution for %s: total positions=%d", symbol, len(leverages))
 	}
 
+	// process funding multipliers for each market
+	for marketID, multiplier := range fundingMultipliers {
+		// get symbol for this market ID
+		symbol, exists := idToSymbol[marketID]
+		if !exists {
+			// skip markets we're not monitoring
+			continue
+		}
+
+		// set funding multiplier metric
+		metrics.SetPerpMarketFundingMultiplier(symbol, multiplier)
+
+		logger.Debug("Funding multiplier for %s: %.8f", symbol, multiplier)
+	}
+
 	return nil
 }
 
@@ -546,3 +556,4 @@ func findLatestPeriodicSnapshot(nodeHome string) (string, error) {
 
 	return latestFile, nil
 }
+

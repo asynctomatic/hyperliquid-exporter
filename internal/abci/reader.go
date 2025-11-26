@@ -396,11 +396,11 @@ func (r *Reader) ReadValidatorProfiles(filePath string) ([]ValidatorProfile, err
 	return profiles, nil
 }
 
-// reads perp user leverage data from ABCI state
-func (r *Reader) ReadPerpLeverageData(filePath string) (map[int64][]int64, error) {
+// reads perp user leverage data and funding multipliers from ABCI state
+func (r *Reader) ReadPerpLeverageData(filePath string) (map[int64][]int64, map[int64]float64, error) {
 	file, err := os.Open(filePath)
 	if err != nil {
-		return nil, fmt.Errorf("open file: %w", err)
+		return nil, nil, fmt.Errorf("open file: %w", err)
 	}
 	defer file.Close()
 
@@ -415,6 +415,9 @@ func (r *Reader) ReadPerpLeverageData(filePath string) (map[int64][]int64, error
 						UserToState [][]interface{} `msgpack:"user_to_state"`
 					} `msgpack:"user_states"`
 				} `msgpack:"clearinghouse"`
+				FundingTracker struct {
+					PerpToFundingMultipliers [][]interface{} `msgpack:"perp_to_funding_multipliers"`
+				} `msgpack:"funding_tracker"`
 			} `msgpack:"perp_dexs"`
 		} `msgpack:"exchange"`
 	}
@@ -423,16 +426,16 @@ func (r *Reader) ReadPerpLeverageData(filePath string) (map[int64][]int64, error
 	decoder.SetCustomStructTag("msgpack")
 
 	if err := decoder.Decode(&data); err != nil {
-		return nil, fmt.Errorf("decode: %w", err)
+		return nil, nil, fmt.Errorf("decode: %w", err)
 	}
 
 	// Map of market ID -> list of leverage values
 	marketLeverages := make(map[int64][]int64)
+	// Map of market ID -> funding multiplier
+	fundingMultipliers := make(map[int64]float64)
 
 	// Iterate through perp dexes (index is dex ID)
-	for dexID, perpDex := range data.Exchange.PerpDexs {
-		fmt.Printf("dex ID: %d\n", dexID)
-
+	for _, perpDex := range data.Exchange.PerpDexs {
 		// Parse user states for this dex
 		for _, entry := range perpDex.Clearinghouse.UserStates.UserToState {
 			if len(entry) != 2 {
@@ -526,7 +529,44 @@ func (r *Reader) ReadPerpLeverageData(filePath string) (map[int64][]int64, error
 				marketLeverages[marketID] = append(marketLeverages[marketID], leverage)
 			}
 		}
+
+		// Parse funding multipliers for this dex
+		for _, entry := range perpDex.FundingTracker.PerpToFundingMultipliers {
+			if len(entry) != 2 {
+				continue
+			}
+
+			// 1st element is market ID
+			var marketID int64
+			switch val := entry[0].(type) {
+			case uint16:
+				marketID = int64(val)
+			case int16:
+				marketID = int64(val)
+			case uint32:
+				marketID = int64(val)
+			case int32:
+				marketID = int64(val)
+			case int64:
+				marketID = val
+			default:
+				continue
+			}
+
+			// 2nd element is funding multiplier
+			var multiplier float64
+			switch val := entry[1].(type) {
+			case float32:
+				multiplier = float64(val)
+			case float64:
+				multiplier = val
+			default:
+				continue
+			}
+
+			fundingMultipliers[marketID] = multiplier
+		}
 	}
 
-	return marketLeverages, nil
+	return marketLeverages, fundingMultipliers, nil
 }

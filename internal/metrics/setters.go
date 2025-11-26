@@ -1652,3 +1652,21 @@ func SetPerpMarketLeverageDistribution(symbol string, bucket string, count float
 		labels: labels,
 	}
 }
+
+func SetPerpMarketFundingMultiplier(symbol string, multiplier float64) {
+	labels := []attribute.KeyValue{
+		attribute.String("symbol", symbol),
+	}
+
+	metricsMutex.Lock()
+	defer metricsMutex.Unlock()
+
+	if _, exists := labeledValues[HLPerpMarketFundingMultiplier]; !exists {
+		labeledValues[HLPerpMarketFundingMultiplier] = make(map[string]labeledValue)
+	}
+
+	labeledValues[HLPerpMarketFundingMultiplier][symbol] = labeledValue{
+		value:  multiplier,
+		labels: labels,
+	}
+}
